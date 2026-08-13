@@ -1,0 +1,91 @@
+{
+  "name": "emudevz-sync",
+  "displayName": "EmuDevz Code Sync",
+  "description": "Edit EmuDevz emulator code in VS Code with live sync to the running game",
+  "version": "0.1.0",
+  "publisher": "smileynet",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smileynet/emudevz"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onFileSystem:emudevz"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "emudevz.connect",
+        "title": "EmuDevz: Connect"
+      },
+      {
+        "command": "emudevz.disconnect",
+        "title": "EmuDevz: Disconnect"
+      },
+      {
+        "command": "emudevz.pullAll",
+        "title": "EmuDevz: Pull All Files"
+      },
+      {
+        "command": "emudevz.pushAll",
+        "title": "EmuDevz: Push All Files"
+      }
+    ],
+    "configuration": {
+      "title": "EmuDevz",
+      "properties": {
+        "emudevz.port": {
+          "type": "number",
+          "default": 9222,
+          "description": "Chrome DevTools Protocol port for connecting to EmuDevz"
+        },
+        "emudevz.autoConnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically connect when the workspace contains an emudevz:// folder"
+        },
+        "emudevz.syncPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "/code",
+            "/docs",
+            "/lib",
+            "/roms",
+            "/tmpl"
+          ],
+          "description": "Paths within the game to show (relative to game root)"
+        },
+        "emudevz.pollInterval": {
+          "type": "number",
+          "default": 1000,
+          "description": "Polling interval in milliseconds for detecting in-game changes"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.0",
+    "@types/vscode": "1.85.0",
+    "@types/ws": "8.5.10",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}
