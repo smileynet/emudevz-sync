@@ -30,6 +30,7 @@
     "file-sync",
     "game-development"
   ],
+  "icon": "icon.png",
   "galleryBanner": {
     "color": "#1a1a2e",
     "theme": "dark"
