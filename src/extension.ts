@@ -8,9 +8,11 @@ let bridge: CDPBridge | undefined;
 let statusBar: StatusBar | undefined;
 let fsProvider: EmuDevzFileSystemProvider | undefined;
 let watcher: FileWatcher | undefined;
+let hasEverConnected = false;
 
 export function activate(context: vscode.ExtensionContext): void {
   const config = vscode.workspace.getConfiguration("emudevz");
+  const outputChannel = vscode.window.createOutputChannel("EmuDevz Sync");
 
   statusBar = new StatusBar();
   bridge = new CDPBridge();
@@ -57,25 +59,37 @@ export function activate(context: vscode.ExtensionContext): void {
     fsProvider!.setWatcher(watcher!);
     watcher!.start(bridge!);
     addWorkspaceFolder();
+    // Only show notification on first manual connect, not auto-reconnects
+    if (!hasEverConnected) {
+      hasEverConnected = true;
+      vscode.window.showInformationMessage(
+        "EmuDevz: Connected! Game files are in the Explorer."
+      );
+    }
   });
 
   bridge.on("disconnected", () => {
     watcher!.stop();
-    vscode.window.showWarningMessage(
-      "EmuDevz: Connection lost. Attempting to reconnect..."
-    );
+    // Silent — status bar shows the state. No notification for connection loss.
   });
 
   bridge.on("reconnecting", ({ attempt, delay }: { attempt: number; delay: number }) => {
     statusBar!.setConnecting();
     const delaySec = (delay / 1000).toFixed(1);
     statusBar!.setReconnecting(attempt, delaySec);
+    outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] Reconnect attempt ${attempt} (next in ${delaySec}s)`);
   });
 
   bridge.on("error", (err: Error) => {
+    outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] Error: ${err.message}`);
     if (err.message.includes("Failed to reconnect")) {
       statusBar!.setError(err.message);
-      vscode.window.showErrorMessage(`EmuDevz: ${err.message}`);
+      vscode.window.showErrorMessage(
+        `EmuDevz: ${err.message}`,
+        "Retry"
+      ).then((action) => {
+        if (action === "Retry") connect();
+      });
     }
   });
 
@@ -98,12 +112,14 @@ async function connect(): Promise<void> {
 
   try {
     await bridge.connect(port);
-    vscode.window.showInformationMessage("EmuDevz: Connected");
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     vscode.window.showErrorMessage(
-      `EmuDevz: ${msg}\n\nLaunch the game with --remote-debugging-port=${port}`
-    );
+      `EmuDevz: Cannot connect. ${msg}`,
+      "Retry"
+    ).then((action) => {
+      if (action === "Retry") connect();
+    });
   }
 }
 
@@ -113,7 +129,6 @@ async function disconnect(): Promise<void> {
   bridge.disconnect();
   watcher?.stop();
   fsProvider?.clearBridge();
-  vscode.window.showInformationMessage("EmuDevz: Disconnected");
 }
 
 async function pullAll(): Promise<void> {

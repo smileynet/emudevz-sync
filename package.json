@@ -7,7 +7,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/smileynet/emudevz"
+    "url": "https://github.com/smileynet/emudevz-sync"
+  },
+  "homepage": "https://github.com/smileynet/emudevz-sync#readme",
+  "bugs": {
+    "url": "https://github.com/smileynet/emudevz-sync/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -15,6 +19,21 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "emudevz",
+    "emulator",
+    "game",
+    "sync",
+    "nes",
+    "6502",
+    "live-reload",
+    "file-sync",
+    "game-development"
+  ],
+  "galleryBanner": {
+    "color": "#1a1a2e",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onFileSystem:emudevz"
   ],
@@ -44,12 +63,12 @@
         "emudevz.port": {
           "type": "number",
           "default": 9222,
-          "description": "Chrome DevTools Protocol port for connecting to EmuDevz"
+          "markdownDescription": "Chrome DevTools Protocol port for connecting to EmuDevz. The game must be launched with `--remote-debugging-port=9222`."
         },
         "emudevz.autoConnect": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically connect when the workspace contains an emudevz:// folder"
+          "description": "Automatically connect when VS Code opens"
         },
         "emudevz.syncPaths": {
           "type": "array",
@@ -63,18 +82,55 @@
             "/roms",
             "/tmpl"
           ],
-          "description": "Paths within the game to show (relative to game root)"
+          "description": "Paths within the game to show in the file explorer"
         },
         "emudevz.pollInterval": {
           "type": "number",
           "default": 1000,
-          "description": "Polling interval in milliseconds for detecting in-game changes"
+          "description": "Polling interval (ms) for detecting in-game file changes"
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "emudevz.getStarted",
+        "title": "Get Started with EmuDevz Sync",
+        "description": "Set up live code sync between VS Code and EmuDevz in 3 steps",
+        "steps": [
+          {
+            "id": "emudevz.launchGame",
+            "title": "Launch EmuDevz with Debug Port",
+            "description": "Add `--remote-debugging-port=9222` to your Steam launch options:\n\n**Steam** → Right-click EmuDevz → Properties → Launch Options\n\nThen launch the game normally.\n\n[Open Steam](command:emudevz.connect)",
+            "media": {
+              "markdown": "media/walkthrough-launch.md"
+            }
+          },
+          {
+            "id": "emudevz.connect",
+            "title": "Connect to the Game",
+            "description": "Click the button below or use the status bar to connect.\n\n[Connect to EmuDevz](command:emudevz.connect)",
+            "media": {
+              "markdown": "media/walkthrough-connect.md"
+            },
+            "completionEvents": [
+              "onCommand:emudevz.connect"
+            ]
+          },
+          {
+            "id": "emudevz.editFile",
+            "title": "Edit Your First File",
+            "description": "Your game files now appear in the Explorer under **EmuDevz Game Files**. Open any file from the `code/` folder and start editing — saves sync to the game instantly!",
+            "media": {
+              "markdown": "media/walkthrough-edit.md"
+            }
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run bundle",
+    "bundle": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src"
@@ -83,6 +139,7 @@
     "@types/node": "20.11.0",
     "@types/vscode": "1.85.0",
     "@types/ws": "8.5.10",
+    "esbuild": "^0.20.0",
     "typescript": "5.3.3"
   },
   "dependencies": {
