@@ -89,6 +89,11 @@
           "type": "number",
           "default": 1000,
           "description": "Polling interval (ms) for detecting in-game file changes"
+        },
+        "emudevz.verbose": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log all file operations and CDP details to the output channel"
         }
       }
     },

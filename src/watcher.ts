@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { CDPBridge, FileEntry } from "./bridge";
+import * as log from "./logger";
 
 export interface FileChange {
   type: vscode.FileChangeType;
@@ -109,6 +110,7 @@ export class FileWatcher implements vscode.Disposable {
 
     // First poll — just populate cache, don't emit changes
     if (this.cache.size === 0 && currentTree.size > 0) {
+      log.debug(`Watcher: initial scan found ${currentTree.size} files`);
       this.cache = currentTree;
       return;
     }
@@ -140,6 +142,7 @@ export class FileWatcher implements vscode.Disposable {
 
     // Emit if there are changes
     if (changes.length > 0) {
+      log.debug(`Watcher: ${changes.length} change(s) detected`);
       this._onDidChange.fire(changes);
     }
   }

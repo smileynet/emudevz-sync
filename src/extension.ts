@@ -3,6 +3,7 @@ import { EmuDevzFileSystemProvider } from "./filesystem";
 import { StatusBar } from "./statusbar";
 import { CDPBridge, BridgeState } from "./bridge";
 import { FileWatcher } from "./watcher";
+import * as log from "./logger";
 
 let bridge: CDPBridge | undefined;
 let statusBar: StatusBar | undefined;
@@ -13,6 +14,7 @@ let hasEverConnected = false;
 export function activate(context: vscode.ExtensionContext): void {
   const config = vscode.workspace.getConfiguration("emudevz");
   const outputChannel = vscode.window.createOutputChannel("EmuDevz Sync");
+  log.initLogger(outputChannel);
 
   statusBar = new StatusBar();
   bridge = new CDPBridge();
@@ -55,6 +57,7 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   bridge.on("connected", () => {
+    log.info("Connected to EmuDevz");
     fsProvider!.setBridge(bridge!);
     fsProvider!.setWatcher(watcher!);
     watcher!.start(bridge!);
@@ -69,6 +72,7 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   bridge.on("disconnected", () => {
+    log.info("Disconnected from EmuDevz");
     watcher!.stop();
     // Silent — status bar shows the state. No notification for connection loss.
   });
@@ -77,11 +81,11 @@ export function activate(context: vscode.ExtensionContext): void {
     statusBar!.setConnecting();
     const delaySec = (delay / 1000).toFixed(1);
     statusBar!.setReconnecting(attempt, delaySec);
-    outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] Reconnect attempt ${attempt} (next in ${delaySec}s)`);
+    log.debug(`Reconnect attempt ${attempt} (next in ${delaySec}s)`);
   });
 
   bridge.on("error", (err: Error) => {
-    outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] Error: ${err.message}`);
+    log.error(err.message);
     if (err.message.includes("Failed to reconnect")) {
       statusBar!.setError(err.message);
       vscode.window.showErrorMessage(

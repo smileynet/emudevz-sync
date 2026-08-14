@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import { EventEmitter } from "events";
+import * as log from "./logger";
 
 interface CDPMessage {
   id: number;
@@ -90,6 +91,7 @@ export class CDPBridge extends EventEmitter {
 
       this.ws.on("open", () => {
         clearTimeout(timeout);
+        log.debug(`CDP: WebSocket connected to ${target.webSocketDebuggerUrl}`);
         this.setState("connected");
         this.reconnectAttempts = 0;
         this.emit("connected");
@@ -120,6 +122,7 @@ export class CDPBridge extends EventEmitter {
       });
 
       this.ws.on("close", () => {
+        log.debug("CDP: WebSocket closed");
         const wasConnected = this.state === "connected";
         this.setState("disconnected");
         this.rejectAllPending("Connection lost");
@@ -159,6 +162,7 @@ export class CDPBridge extends EventEmitter {
 
   async listFiles(path: string): Promise<FileEntry[]> {
     this.ensureConnected();
+    log.debug(`FS: listFiles ${path}`);
     const result = await this.evaluate(`
       (() => {
         try {
@@ -177,6 +181,7 @@ export class CDPBridge extends EventEmitter {
 
   async listDirectory(path: string): Promise<FileEntry[]> {
     this.ensureConnected();
+    log.debug(`FS: listDirectory ${path}`);
     const result = await this.evaluate(`
       (() => {
         try {
@@ -195,6 +200,7 @@ export class CDPBridge extends EventEmitter {
 
   async readFile(path: string): Promise<string> {
     this.ensureConnected();
+    log.debug(`FS: read ${path}`);
     const result = await this.evaluate(`
       (() => {
         try { return window.FS.read("${this.escapePath(path)}"); }
@@ -207,6 +213,7 @@ export class CDPBridge extends EventEmitter {
 
   async writeFile(path: string, content: string): Promise<void> {
     this.ensureConnected();
+    log.debug(`FS: write ${path} (${content.length} chars)`);
     const escaped = content
       .replace(/\\/g, "\\\\")
       .replace(/`/g, "\\`")
@@ -244,6 +251,7 @@ export class CDPBridge extends EventEmitter {
 
   async mkdir(path: string): Promise<void> {
     this.ensureConnected();
+    log.debug(`FS: mkdir ${path}`);
     const result = await this.evaluate(`
       (() => {
         try { window.FS.mkdirp("${this.escapePath(path)}"); return { success: true }; }
@@ -255,6 +263,7 @@ export class CDPBridge extends EventEmitter {
 
   async deleteFile(path: string): Promise<void> {
     this.ensureConnected();
+    log.debug(`FS: delete ${path}`);
     const result = await this.evaluate(`
       (() => {
         try { window.FS.rm("${this.escapePath(path)}"); return { success: true }; }
@@ -266,6 +275,7 @@ export class CDPBridge extends EventEmitter {
 
   async deleteDirectory(path: string): Promise<void> {
     this.ensureConnected();
+    log.debug(`FS: rmdir ${path}`);
     const result = await this.evaluate(`
       (() => {
         try { window.FS.rmrf("${this.escapePath(path)}"); return { success: true }; }
@@ -277,6 +287,7 @@ export class CDPBridge extends EventEmitter {
 
   async rename(oldPath: string, newPath: string): Promise<void> {
     this.ensureConnected();
+    log.debug(`FS: rename ${oldPath} → ${newPath}`);
     const result = await this.evaluate(`
       (() => {
         try {
@@ -349,6 +360,7 @@ export class CDPBridge extends EventEmitter {
   }
 
   private async evaluate(expression: string): Promise<any> {
+    const start = Date.now();
     const response = (await this.send("Runtime.evaluate", {
       expression,
       awaitPromise: false,
@@ -362,6 +374,7 @@ export class CDPBridge extends EventEmitter {
       );
     }
 
+    log.debug(`CDP: evaluate (${Date.now() - start}ms)`);
     return response?.result?.value;
   }
 
@@ -397,6 +410,7 @@ export class CDPBridge extends EventEmitter {
     const page = targets.find(
       (t) => t.type === "page" && !t.url.includes("devtools://")
     );
+    log.debug(`CDP: found ${targets.length} targets, selected: ${page?.title ?? "none"}`);
     if (!page) {
       throw new Error("No page target found. Is EmuDevz loaded?");
     }
