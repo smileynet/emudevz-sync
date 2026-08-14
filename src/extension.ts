@@ -3,6 +3,7 @@ import { EmuDevzFileSystemProvider } from "./filesystem";
 import { StatusBar } from "./statusbar";
 import { CDPBridge, BridgeState } from "./bridge";
 import { FileWatcher } from "./watcher";
+import { ReadOnlyDecorationProvider } from "./decorations";
 import * as log from "./logger";
 
 let bridge: CDPBridge | undefined;
@@ -25,11 +26,17 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // Register the emudevz:// filesystem scheme
+  const decorations = new ReadOnlyDecorationProvider();
   context.subscriptions.push(
     vscode.workspace.registerFileSystemProvider("emudevz", fsProvider, {
       isCaseSensitive: true,
-    })
+    }),
+    vscode.window.registerFileDecorationProvider(decorations),
+    decorations
   );
+
+  // Pass decoration checker to filesystem provider for write rejection
+  fsProvider.setReadOnlyCheck((path) => decorations.isReadOnly(path));
 
   // Register commands
   context.subscriptions.push(

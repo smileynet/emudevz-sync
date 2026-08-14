@@ -5,6 +5,7 @@ import { FileChange, FileWatcher } from "./watcher";
 export class EmuDevzFileSystemProvider implements vscode.FileSystemProvider {
   private bridge: CDPBridge | null = null;
   private watcher: FileWatcher | null = null;
+  private readOnlyCheck: ((path: string) => boolean) | null = null;
   private _emitter = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
 
   readonly onDidChangeFile: vscode.Event<vscode.FileChangeEvent[]> =
@@ -20,6 +21,10 @@ export class EmuDevzFileSystemProvider implements vscode.FileSystemProvider {
 
   setWatcher(watcher: FileWatcher): void {
     this.watcher = watcher;
+  }
+
+  setReadOnlyCheck(check: (path: string) => boolean): void {
+    this.readOnlyCheck = check;
   }
 
   fireFullRefresh(): void {
@@ -138,6 +143,11 @@ export class EmuDevzFileSystemProvider implements vscode.FileSystemProvider {
     this.ensureConnected();
 
     const gamePath = this.toGamePath(uri);
+
+    if (this.readOnlyCheck?.(gamePath)) {
+      throw vscode.FileSystemError.NoPermissions(uri);
+    }
+
     const text = new TextDecoder().decode(content);
 
     // Suppress echo — tell watcher to ignore the next change for this path
@@ -165,6 +175,11 @@ export class EmuDevzFileSystemProvider implements vscode.FileSystemProvider {
 
     const oldPath = this.toGamePath(oldUri);
     const newPath = this.toGamePath(newUri);
+
+    if (this.readOnlyCheck?.(oldPath) || this.readOnlyCheck?.(newPath)) {
+      throw vscode.FileSystemError.NoPermissions(oldUri);
+    }
+
     await this.bridge!.rename(oldPath, newPath);
 
     this._emitter.fire([
@@ -177,6 +192,10 @@ export class EmuDevzFileSystemProvider implements vscode.FileSystemProvider {
     this.ensureConnected();
 
     const gamePath = this.toGamePath(uri);
+
+    if (this.readOnlyCheck?.(gamePath)) {
+      throw vscode.FileSystemError.NoPermissions(uri);
+    }
 
     try {
       const info = await this.bridge!.stat(gamePath);
@@ -200,6 +219,11 @@ export class EmuDevzFileSystemProvider implements vscode.FileSystemProvider {
     this.ensureConnected();
 
     const gamePath = this.toGamePath(uri);
+
+    if (this.readOnlyCheck?.(gamePath)) {
+      throw vscode.FileSystemError.NoPermissions(uri);
+    }
+
     await this.bridge!.mkdir(gamePath);
 
     this._emitter.fire([{ type: vscode.FileChangeType.Created, uri }]);

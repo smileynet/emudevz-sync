@@ -94,6 +94,18 @@
           "type": "boolean",
           "default": false,
           "description": "Log all file operations and CDP details to the output channel"
+        },
+        "emudevz.readOnlyPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "/docs",
+            "/lib",
+            "/roms"
+          ],
+          "description": "Paths within the game that should be read-only (writes will be rejected)"
         }
       }
     },
