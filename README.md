@@ -2,9 +2,13 @@
 
 A VS Code extension that lets you edit [EmuDevz](https://afska.github.io/emudevz) game code files directly in VS Code with live sync to the running game.
 
+![File Explorer](media/screenshots/file-explorer.png)
+
 ## How It Works
 
 The extension connects to a running EmuDevz instance via Chrome DevTools Protocol (CDP) and calls the game's filesystem API (`window.FS`) directly. Edits in VS Code appear in-game instantly, and in-game changes sync back to VS Code within ~1 second.
+
+![Live Editing](media/screenshots/live-editing.png)
 
 ## Setup
 
@@ -22,9 +26,13 @@ The extension connects to a running EmuDevz instance via Chrome DevTools Protoco
 
 - Live bidirectional sync (VS Code ↔ game)
 - Full filesystem operations (create, rename, delete files/folders)
+- Read-only protection for reference directories (`/docs`, `/lib`, `/roms`)
 - Auto-reconnect on connection loss
 - Configurable polling interval for change detection
+- Verbose output channel for diagnostics
 - Status bar showing connection state
+
+![Status & Diagnostics](media/screenshots/status-connected.png)
 
 ## Configuration
 
@@ -34,6 +42,8 @@ The extension connects to a running EmuDevz instance via Chrome DevTools Protoco
 | `emudevz.autoConnect` | `true` | Auto-connect when VS Code opens |
 | `emudevz.syncPaths` | `["/code", "/docs", "/lib", "/roms", "/tmpl"]` | Paths to show from the game |
 | `emudevz.pollInterval` | `1000` | Polling interval (ms) for detecting in-game changes |
+| `emudevz.verbose` | `false` | Log all file operations and CDP details to the output channel |
+| `emudevz.readOnlyPaths` | `["/docs", "/lib", "/roms"]` | Paths that are read-only (writes rejected) |
 
 ## Development
 
